@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BahrBot — Bahr Brothers Manufacturing</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
+#app{display:flex;flex-direction:column;height:640px;width:900px;max-width:100%;background:#fff;border:1px solid #e0ddd5;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
+#hdr{padding:12px 16px;background:#faf9f6;border-bottom:1px solid #e0ddd5;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.bb-icon{width:34px;height:34px;border-radius:7px;background:#BA7517;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:16px;flex-shrink:0;}
+#hdr-title{font-size:15px;font-weight:600;color:#1a1a18;}
+#hdr-sub{font-size:11px;color:#888;margin-top:1px;}
+.live-dot{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;color:#888;}
+.dot{width:7px;height:7px;border-radius:50%;background:#639922;}
+#main{display:flex;flex:1;overflow:hidden;}
+#chat{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+#msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+#chips{padding:0 14px 8px;display:flex;flex-wrap:wrap;gap:5px;flex-shrink:0;}
+.chip{background:#faf9f6;border:1px solid #ddd;border-radius:20px;padding:5px 11px;font-size:11px;color:#666;cursor:pointer;white-space:nowrap;}
+.chip:hover{background:#f0ede4;color:#333;}
+#input-row{padding:10px 14px;border-top:1px solid #e0ddd5;display:flex;gap:8px;align-items:center;flex-shrink:0;}
+#input-row input{flex:1;border:1px solid #ddd;border-radius:22px;padding:9px 16px;font-size:13px;background:#faf9f6;color:#1a1a18;outline:none;}
+#input-row input:focus{border-color:#BA7517;}
+#send-btn{width:34px;height:34px;border-radius:50%;background:#BA7517;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+#send-btn:hover{background:#854F0B;}
+#send-btn svg{width:14px;height:14px;fill:#fff;}
+.msg-user{align-self:flex-end;background:#faf9f6;border:1px solid #e0ddd5;border-radius:14px 14px 2px 14px;padding:9px 13px;max-width:80%;font-size:13px;line-height:1.5;color:#1a1a18;}
+.msg-bot{align-self:flex-start;background:#fff;border:1px solid #e0ddd5;border-left:3px solid #BA7517;border-radius:2px 14px 14px 14px;padding:11px 14px;max-width:90%;font-size:13px;line-height:1.65;white-space:pre-wrap;color:#1a1a18;}
+.msg-bot.loading{color:#999;font-style:italic;}
+#src-panel{width:220px;flex-shrink:0;border-left:1px solid #e0ddd5;display:flex;flex-direction:column;overflow:hidden;background:#faf9f6;}
+#src-hdr{padding:11px 13px;border-bottom:1px solid #e0ddd5;font-size:11px;font-weight:600;color:#888;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;}
+#src-list{flex:1;overflow-y:auto;padding:8px;}
+.src-card{background:#fff;border:1px solid #e0ddd5;border-radius:8px;padding:9px 10px;margin-bottom:7px;}
+.src-tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;margin-bottom:4px;letter-spacing:.04em;text-transform:uppercase;}
+.tag-procedure{background:#E1F5EE;color:#085041;}
+.tag-checklist{background:#EAF3DE;color:#27500A;}
+.tag-policy{background:#FAEEDA;color:#633806;}
+.tag-form{background:#FAECE7;color:#4A1B0C;}
+.tag-assessment{background:#E6F1FB;color:#0C447C;}
+.src-eq{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:#FAEEDA;color:#633806;margin-left:4px;}
+.src-doc{font-size:12px;font-weight:600;margin-top:3px;line-height:1.3;color:#1a1a18;}
+.src-folder{font-size:10px;color:#888;margin-top:3px;font-family:monospace;line-height:1.4;word-break:break-all;}
+.src-created{font-size:10px;color:#aaa;margin-top:3px;}
+.src-empty{padding:16px 12px;font-size:12px;color:#aaa;line-height:1.5;}
+/* BYOK overlay */
+#key-overlay{position:fixed;inset:0;background:rgba(20,18,14,0.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;}
+#key-modal{background:#fff;border-radius:12px;padding:28px 28px 24px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,0.18);}
+#key-modal .km-logo{width:38px;height:38px;border-radius:8px;background:#BA7517;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;margin-bottom:14px;}
+#key-modal h2{font-size:16px;font-weight:600;color:#1a1a18;margin-bottom:6px;}
+#key-modal p{font-size:12px;color:#888;line-height:1.6;margin-bottom:16px;}
+#key-modal .km-note{font-size:11px;color:#aaa;line-height:1.55;background:#faf9f6;border:1px solid #e8e5dc;border-radius:7px;padding:9px 11px;margin-bottom:18px;}
+#key-modal .km-note strong{color:#666;}
+#key-input-wrap{display:flex;gap:8px;margin-bottom:10px;}
+#key-input{flex:1;border:1px solid #ddd;border-radius:8px;padding:9px 13px;font-size:13px;font-family:monospace;color:#1a1a18;outline:none;background:#faf9f6;}
+#key-input:focus{border-color:#BA7517;}
+#key-save-btn{background:#BA7517;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+#key-save-btn:hover{background:#854F0B;}
+#key-error{font-size:12px;color:#c0392b;min-height:16px;}
+#key-footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid #e8e5dc;}
+#key-footer a{font-size:11px;color:#BA7517;text-decoration:none;}
+#key-footer a:hover{text-decoration:underline;}
+/* key badge in header */
+#key-badge{margin-left:auto;display:flex;align-items:center;gap:6px;}
+#key-status{font-size:11px;color:#639922;display:flex;align-items:center;gap:4px;}
+#key-status .dot{background:#639922;}
+#key-change-btn{font-size:11px;color:#aaa;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;}
+#key-change-btn:hover{color:#BA7517;background:#faf9f6;}
+</style>
+</head>
+<body>
+<div id="key-overlay">
+  <div id="key-modal">
+    <div class="km-logo">B</div>
+    <h2>Enter your Anthropic API key</h2>
+    <p>BahrBot uses the Anthropic API to answer your questions. Your key is stored only in this browser — it never leaves your machine or touches any server.</p>
+    <div class="km-note">
+      <strong>Where to get a key:</strong> Sign in at <strong>console.anthropic.com</strong>, go to API Keys, and create a new key. It starts with <code>sk-ant-</code>.<br><br>
+      <strong>Cost:</strong> A few cents per day of typical use. You control your own usage and billing.
+    </div>
+    <div id="key-input-wrap">
+      <input id="key-input" type="password" placeholder="sk-ant-api03-..." autocomplete="off" />
+      <button id="key-save-btn" onclick="saveKey()">Connect</button>
+    </div>
+    <div id="key-error"></div>
+    <div id="key-footer">
+      <a href="https://console.anthropic.com" target="_blank">Get a key at console.anthropic.com ↗</a>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <div id="hdr">
+    <div class="bb-icon">B</div>
+    <div>
+      <div id="hdr-title">BahrBot</div>
+      <div id="hdr-sub">Bahr Brothers Mfg., Inc. &nbsp;·&nbsp; Safety &amp; Training Assistant</div>
+    </div>
+    <div class="live-dot"><div class="dot"></div>Live</div>
+    <div id="key-badge" style="display:none;">
+      <span id="key-status"><div class="dot" style="width:7px;height:7px;border-radius:50%;background:#639922;"></div>Key saved</span>
+      <button id="key-change-btn" onclick="changeKey()">Change</button>
+    </div>
+  </div>
+  <div id="main">
+    <div id="chat">
+      <div id="msgs"></div>
+      <div id="chips"></div>
+      <div id="input-row">
+        <input id="qi" type="text" placeholder="Ask about a procedure, PPE, or emergency action…" />
+        <button id="send-btn" onclick="send()">
+          <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="src-panel">
+      <div id="src-hdr">Sources</div>
+      <div id="src-list"><div class="src-empty">Source documents appear here when you ask a question.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const KB = `You are BahrBot, the AI safety and training assistant for Bahr Brothers Manufacturing, Inc. — an iron and steel castings manufacturer at 2545 Lincoln Blvd., Marion, Indiana 46952.
+
+Answer ONLY from the knowledge base below. Never invent procedures, names, or locations. If information is not in the knowledge base, say: "I don't have that procedure on file yet. Please check with your supervisor or contact the Safety Manager."
+
+Always cite the exact source document and equipment tag. Format numbered steps clearly. Be direct — shop floor users need precise, actionable answers.
+
+RESPOND IN THIS EXACT JSON FORMAT only (no markdown, no backticks, raw JSON):
+{"answer":"your answer here","sources":[{"doc":"filename","folder":"folder path","type":"procedure|checklist|policy|form|assessment","equipment_tag":"TAG or null","created":"date or null"}]}
+
+============================================================
+BAHR BROTHERS KNOWLEDGE BASE
+============================================================
+
+[DOC: GRDC-1 LOTO Procedure.docx | FOLDER: ENERGY CONTROL & LOCKOUT TAGOUT / GRINDING ROOM / GRDC-1 | EQUIP: GRDC-1 | CREATED: 11/13/2024 | BY: Will Bratcher]
+DESCRIPTION: Dust Collector Unit — Grinding Department
+LOCKOUT POINTS: 4 total, all 480V electrical
+- GRDC-1A: Main electrical panel near floor molding. Red handle disconnect. Padlock. Try-out: restart machine — must not start.
+- GRDC-1B: Electrical panel next to blowdown motor. Red handle disconnect. Padlock. Try-out: open door latch — must not open.
+- GRDC-1C: Electrical panel outside dust collector blowdown. Red handle disconnect. Padlock. Try-out: restart machine — must not start.
+- GRDC-1D: Electrical panel outside dust collector blowdown. Red handle disconnect. Padlock. Try-out: restart machine — must not start.
+LOCKOUT STEPS:
+1. Notify all affected employees GRDC-1 is being shut down and locked out.
+2. Review procedure. Ensure authorized employee understands energy type and hazards.
+3. Shut down GRDC-1 by normal stopping procedure. Wait until ALL moving parts have fully stopped.
+4. Go to GRDC-1A (main electrical panel near floor molding). Move red handle disconnect to OFF. Apply padlock. Try to restart — machine must not start.
+5. Go to GRDC-1B (next to blowdown motor). Move red handle disconnect to OFF. Apply padlock. Try to open door latch — must not open.
+6. Go to GRDC-1C (outside dust collector blowdown). Move red handle disconnect to OFF. Apply padlock. Try to restart — machine must not start.
+7. Go to GRDC-1D (outside dust collector blowdown). Move red handle disconnect to OFF. Apply padlock. Try to restart — machine must not start.
+8. All 4 lockout points secured. Proceed with maintenance.
+SPECIAL INSTRUCTIONS: Wait until all moving parts fully stop before beginning work. Machine modifications must be updated in this procedure — contact facility manager.
+AUDIT DUE: 11/13/2025, 11/13/2026, 11/13/2027, 11/13/2028
+REFERENCE: 29 CFR 1910.147 App. A
+
+[DOC: SB-1 LOTO Procedure.docx | FOLDER: ENERGY CONTROL & LOCKOUT TAGOUT / GRINDING ROOM / SB-1 | EQUIP: SB-1 | CREATED: 10/31/2024 | BY: Will Bratcher]
+DESCRIPTION: Cardinal Shot Blast Unit — Grinding Department
+LOCKOUT POINTS: 2 total
+- 480V Electrical: SB-1 electrical panel on SIDE OF UNIT. Red handle. Padlock. Try-out: restart SB-1 — must not start.
+- Pneumatic (compressed air): Ball valve lockout unit at AIR LINE ABOVE SB-1 ELECTRICAL PANEL. Turn valve closed. Push door latch button to bleed air. Padlock. Try-out: open door latch — must not open.
+LOCKOUT STEPS:
+1. Notify all affected employees SB-1 is being shut down and locked out.
+2. Review procedure. Understand both energy types: 480V electrical and pneumatic (compressed air).
+3. Shut down SB-1. Wait for ALL moving parts to stop.
+4. Go to SB-1 electrical panel on the SIDE OF THE UNIT. Move red handle disconnect to OFF. Apply padlock. Try to restart — must not start.
+5. Locate air line ABOVE the SB-1 electrical panel. Turn ball valve to closed (perpendicular to line). Push door latch button to BLEED AIR. Apply ball valve lockout unit and padlock. Try to open door latch — must not open.
+6. SB-1 locked out. Proceed with maintenance.
+SPECIAL INSTRUCTIONS: Wait for all moving parts to stop. Always bleed air out of line before any work.
+REFERENCE: 29 CFR 1910.147 App. A
+
+[DOC: GRDC-2 LOTO Procedure.docx | FOLDER: ENERGY CONTROL & LOCKOUT TAGOUT / GRINDING ROOM / GRDC-2 | EQUIP: GRDC-2 | CREATED: 11/01/2024 | BY: Will Bratcher]
+DESCRIPTION: Dust Collector Unit — Grinding Department
+LOCKOUT POINTS: 1 total
+- 480V Electrical: GRDC-2 electrical panel. Red handle. Padlock. Try-out: restart GRDC-2 — must not start.
+LOCKOUT STEPS:
+1. Notify employees. Review procedure.
+2. Shut down GRDC-2. Wait for all moving parts to stop.
+3. Go to GRDC-2 electrical panel. Move red handle disconnect to OFF. Apply padlock. Try to restart — must not start.
+4. GRDC-2 locked out. Proceed with maintenance.
+
+[DOC: SB-2 LOTO Procedure.docx | FOLDER: ENERGY CONTROL & LOCKOUT TAGOUT / SHIPPING DEPARTMENT / SB-2 | EQUIP: SB-2 | CREATED: 10/31/2024 | BY: Will Bratcher]
+DESCRIPTION: Cardinal Shot Blast Unit — Shipping Department
+LOCKOUT POINTS: 2 total
+- 480V Electrical: SW side of machine. Disconnect to OFF. Padlock. Try-out: restart SB-2 — must not start.
+- Pneumatic: Ball valve lockout unit at SW SIDE OF MACHINE. Turn valve closed. Push door latch button to bleed air. Padlock. Try-out: open door latch — must not open.
+LOCKOUT STEPS:
+1. Notify employees. Review procedure.
+2. Shut down SB-2. Wait for all moving parts to stop.
+3. Go to SW side of machine. Move electrical disconnect to OFF. Apply padlock. Try to restart — must not start.
+4. At SW side of machine, locate air ball valve. Turn to closed. Push door latch button to bleed air. Apply ball valve lockout unit and padlock. Try to open door latch — must not open.
+5. SB-2 locked out.
+SPECIAL INSTRUCTIONS: Bleed all air before work.
+
+[DOC: PPE - Shakeout Assessment.docx | FOLDER: PERSONAL PROTECTIVE EQUIPMENT | EQUIP: null | DATE: 08/11/2021 | ASSESSOR: Will Bratcher]
+JOB: Shake-Out | TASK: Removing new castings from sand | DEPT: Molding/Shakeout
+REQUIRED PPE:
+- Safety Glasses — required (dust/sand and heat from castings)
+- Impervious Gloves — required (cut, abrasion, puncture risk from falling molds)
+- Safety Shoes — required (impact and puncture risk from falling molds)
+HAZARDS:
+- Eye: dust/sand present; castings and sand may be hot
+- Hands: molds may fall — cut, abrasion, and puncture risk
+- Feet: molds may fall — impact and puncture risk
+- No chemical, electrical, or burn head hazards identified
+STANDARD: OSHA 29 CFR 1910.132(d)(1)
+
+[DOC: Emergency Action Program.docx | FOLDER: EMERGENCY ACTION / FACILITY-WIDE | APPLIES TO: All employees, visitors, contractors]
+ADDRESS: 2545 Lincoln Blvd., Marion, Indiana 46952 | Phone: (765) 664-6235
+
+EVACUATION ASSEMBLY AREAS:
+- Area A (Between Front Office and Foundry): Machine Shop, Shipping Department, Casting Repair
+- Area B (Outside Breakroom Door, Employee Parking Lot): Finishing Dept., Bi-Room Molding, Rotor Rebuild
+- Area C (Outside Main Overhead Doors, Behind Furnace Deck): Floor Molding, Line Molding, Core Molding, Shakeout, Melt Crew, Maintenance, Pattern Repair
+
+FIRE:
+1. Evacuate immediately and calmly via nearest exit.
+2. Call 911 when safe. Provide: address (2545 Lincoln Blvd.), your name, injuries, fire size.
+3. Go to your department's assembly area (see above).
+4. Leadmen/supervisors communicate evacuation status to emergency team.
+5. Stay at assembly area until your leadman/supervisor directs you to leave.
+
+TORNADO:
+- When Marion, IN is under a tornado warning, an announcement will be made.
+- Go immediately to the FRONT OFFICE BASEMENT.
+- Stay there until Program Administrator announces all-clear.
+
+BOMB THREAT:
+- Remain calm. Notify management/leadmen immediately. Call 911 if no supervisor available.
+- If phone threat: keep caller on line, do not hang up, signal another employee, write down exact wording, caller ID, voice details.
+- Refer to DHS Bomb Threat Checklist (in Emergency Action binder).
+- Follow management/law enforcement instructions on lockdown, search, or evacuation.
+
+ACTIVE SHOOTER — RUN / HIDE / FIGHT:
+- RUN: If escape path is available — leave belongings, evacuate, help others if possible, prevent others from entering danger zone.
+- HIDE: Lock or barricade door, silence phones, stay out of view. Do not open door.
+- FIGHT: Last resort only — act aggressively, improvise weapons, commit to action.
+- Call 911 when safe: give location, number/description of shooters, weapons seen, victim count.
+
+[DOC: Authorized Employees for Lockout & Tagout.xlsx | FOLDER: ENERGY CONTROL & LOCKOUT TAGOUT | TYPE: Authorization record]
+EMPLOYEES AUTHORIZED TO PERFORM LOTO:
+- Randall Compo — ALL equipment
+- John Anderson — ALL equipment
+- Bill Wallace — ALL equipment
+- Kenny Duke — Pattern Shop only
+- Manuel Herrera — Cut Off Saw only
+- Jon Cutler — Snag/Swing Grinder only
+- Jason Cowles — Furnace only`;
+
+const SUGGESTED = [
+  "What's the lockout procedure for GRDC-1?",
+  "Where is the air lockout for SB-1?",
+  "What PPE is required for Shakeout?",
+  "Where does Shakeout go during a fire?",
+  "What do I do in a tornado?",
+  "Who is authorized for all LOTO?",
+  "How many lockout points does GRDC-1 have?",
+  "Walk me through the SB-2 lockout."
+];
+
+let history = [];
+
+function addMsg(type, text) {
+  const div = document.createElement('div');
+  div.className = type === 'user' ? 'msg-user' : 'msg-bot';
+  if (text === '...') { div.classList.add('loading'); div.textContent = 'Looking that up…'; }
+  else { div.textContent = text; }
+  document.getElementById('msgs').appendChild(div);
+  div.scrollIntoView({behavior:'smooth',block:'nearest'});
+  return div;
+}
+
+function renderSources(sources) {
+  const sl = document.getElementById('src-list');
+  sl.innerHTML = '';
+  if (!sources || !sources.length) { sl.innerHTML = '<div class="src-empty">No sources cited.</div>'; return; }
+  sources.forEach(s => {
+    const c = document.createElement('div');
+    c.className = 'src-card';
+    const t = s.type || 'procedure';
+    const eq = (s.equipment_tag && s.equipment_tag !== 'null') ? `<span class="src-eq">${s.equipment_tag}</span>` : '';
+    c.innerHTML = `<div><span class="src-tag tag-${t}">${t}</span>${eq}</div>
+      <div class="src-doc">${s.doc||''}</div>
+      ${s.folder ? `<div class="src-folder">${s.folder}</div>` : ''}
+      ${s.created && s.created !== 'null' ? `<div class="src-created">Created: ${s.created}</div>` : ''}`;
+    sl.appendChild(c);
+  });
+}
+
+function saveKey() {
+  const input = document.getElementById('key-input');
+  const errEl = document.getElementById('key-error');
+  const key = input.value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    errEl.textContent = 'That doesn\'t look like a valid Anthropic key. It should start with sk-ant-';
+    return;
+  }
+  localStorage.setItem('bahrbot_api_key', key);
+  errEl.textContent = '';
+  document.getElementById('key-overlay').style.display = 'none';
+  document.getElementById('key-badge').style.display = 'flex';
+  document.querySelector('.live-dot').style.display = 'none';
+}
+
+function changeKey() {
+  localStorage.removeItem('bahrbot_api_key');
+  document.getElementById('key-input').value = '';
+  document.getElementById('key-error').textContent = '';
+  document.getElementById('key-overlay').style.display = 'flex';
+  document.getElementById('key-badge').style.display = 'none';
+  document.querySelector('.live-dot').style.display = 'flex';
+}
+
+function getKey() {
+  return localStorage.getItem('bahrbot_api_key');
+}
+
+async function send() {
+  const qi = document.getElementById('qi');
+  const text = qi.value.trim();
+  if (!text) return;
+  const apiKey = getKey();
+  if (!apiKey) { changeKey(); return; }
+  qi.value = '';
+  document.getElementById('chips').style.display = 'none';
+  addMsg('user', text);
+  const placeholder = addMsg('bot', '...');
+  history.push({role:'user',content:text});
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:KB,
+        messages:history
+      })
+    });
+    const data = await res.json();
+    if (data.error) {
+      if (data.error.type === 'authentication_error') {
+        placeholder.textContent = 'Invalid API key. Click "Change" in the header to re-enter your key.';
+        placeholder.classList.remove('loading');
+        return;
+      }
+      throw new Error(data.error.message);
+    }
+    const raw = (data.content||[]).map(b=>b.text||'').join('');
+    let parsed;
+    try { parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch { parsed = {answer:raw, sources:[]}; }
+    placeholder.textContent = parsed.answer || 'No response.';
+    placeholder.classList.remove('loading');
+    history.push({role:'assistant', content:parsed.answer||''});
+    renderSources(parsed.sources);
+  } catch(e) {
+    placeholder.textContent = 'Connection error. Please check your internet connection and try again.';
+    placeholder.classList.remove('loading');
+  }
+}
+
+document.getElementById('qi').addEventListener('keydown', e => { if(e.key==='Enter') send(); });
+document.getElementById('key-input').addEventListener('keydown', e => { if(e.key==='Enter') saveKey(); });
+
+// On load: check if key already saved
+(function init() {
+  const saved = localStorage.getItem('bahrbot_api_key');
+  if (saved) {
+    document.getElementById('key-overlay').style.display = 'none';
+    document.getElementById('key-badge').style.display = 'flex';
+    document.querySelector('.live-dot').style.display = 'none';
+  }
+})();
+
+const chips = document.getElementById('chips');
+SUGGESTED.forEach(q => {
+  const c = document.createElement('span');
+  c.className = 'chip';
+  c.textContent = q;
+  c.onclick = () => { document.getElementById('qi').value = q; send(); };
+  chips.appendChild(c);
+});
+
+const welcome = document.createElement('div');
+welcome.className = 'msg-bot';
+welcome.textContent = "Hello. I'm BahrBot — Bahr Brothers Manufacturing's safety and training assistant.\n\nI have the actual LOTO procedures on file for GRDC-1, GRDC-2, SB-1, and SB-2, the PPE assessment for Shakeout, the Emergency Action Program (fire, tornado, bomb threat, active shooter), and the LOTO authorized employee list.\n\nAsk me anything, or tap a suggested question to get started.";
+document.getElementById('msgs').appendChild(welcome);
+</script>
+</body>
+</html>
