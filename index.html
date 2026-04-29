@@ -291,7 +291,7 @@ function saveKey() {
   const input = document.getElementById('key-input');
   const errEl = document.getElementById('key-error');
   const key = input.value.trim();
-  if (!key.startsWith('sk-ant-')) {
+  if (!key.startsWith('gsk_')) {
     errEl.textContent = 'That key doesn\'t look right. Please check with your GCEGC representative and try again.';
     return;
   }
@@ -327,31 +327,31 @@ async function send() {
   const placeholder = addMsg('bot', '...');
   history.push({role:'user',content:text});
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
+        'Authorization': 'Bearer ' + apiKey
       },
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'llama-3.3-70b-versatile',
         max_tokens:1000,
-        system:KB,
-        messages:history
+        messages:[
+          {role:'system', content:KB},
+          ...history
+        ]
       })
     });
     const data = await res.json();
     if (data.error) {
-      if (data.error.type === 'authentication_error') {
+      if (data.error.code === 'invalid_api_key' || data.error.type === 'invalid_request_error') {
         placeholder.textContent = 'The API key was not accepted. Please contact your GCEGC representative for a valid key, then click "Change" in the header to re-enter it.';
         placeholder.classList.remove('loading');
         return;
       }
       throw new Error(data.error.message);
     }
-    const raw = (data.content||[]).map(b=>b.text||'').join('');
+    const raw = data.choices?.[0]?.message?.content || '';
     let parsed;
     try { parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
     catch { parsed = {answer:raw, sources:[]}; }
